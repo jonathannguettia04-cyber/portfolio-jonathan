@@ -74,13 +74,19 @@
   }
 
   /* ============ CODE RAIN BACKDROP ============ */
-  canvas.code-rain{position:absolute;inset:0;z-index:0;pointer-events:none;width:100%;height:100%;display:block;}
-  .hero canvas.code-rain{opacity:.6;mix-blend-mode:multiply;}
-  .contact-band canvas.code-rain{opacity:.55;mix-blend-mode:screen;border-radius:24px;}
+  canvas.code-rain{
+    position:absolute;inset:0;z-index:0;pointer-events:none;width:100%;height:100%;display:block;
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    mask-image:linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+  }
+  .hero canvas.code-rain{opacity:.4;}
+  .contact-band canvas.code-rain{opacity:.35;border-radius:24px;}
   @media (prefers-reduced-motion: reduce){
     .blob{animation:none;}
     canvas.code-rain{display:none;}
   }
+
+  .hero-card{isolation:isolate;}
 
   .hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.35fr 0.9fr;gap:56px;align-items:start;}
   .badge-row{display:flex;align-items:center;gap:14px;margin-bottom:28px;flex-wrap:wrap;}
@@ -116,7 +122,7 @@
     transition:transform .18s ease, box-shadow .18s ease;transform-style:preserve-3d;will-change:transform;
   }
   .hero-card .photo-frame{border-radius:14px;overflow:hidden;position:relative;margin-bottom:18px;border:2px solid var(--ink);}
-  .hero-card .photo-frame img{width:100%;height:320px;object-fit:cover;}
+  .hero-card .photo-frame img{width:100%;height:320px;object-fit:cover;object-position:top center;}
   .year-chip{
     position:absolute;top:12px;right:12px;background:var(--amber-soft);border:2px solid var(--ink);
     padding:5px 12px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#7c4a06;
@@ -725,7 +731,7 @@
 
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    entries.forEach(e => e.target.classList.toggle('in', e.isIntersecting));
   }, { threshold: 0.12 });
   revealEls.forEach(el => io.observe(el));
 
@@ -742,22 +748,25 @@
 
   const cascadeEls = document.querySelectorAll('.reveal-cascade, .reveal-cascade-plain');
   const cascadeIo = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); cascadeIo.unobserve(e.target); } });
+    entries.forEach(e => e.target.classList.toggle('in', e.isIntersecting));
   }, { threshold: 0.1 });
   cascadeEls.forEach(el => cascadeIo.observe(el));
 
-  /* ============ COMPTEUR ANIMÉ ============ */
+  /* ============ COMPTEUR ANIMÉ (se relance chaque fois qu'il redevient visible) ============ */
   const statCounter = document.getElementById('statCounter');
   if (statCounter) {
     const target = parseInt(statCounter.dataset.target, 10) || 0;
+    let countRunning = false;
     const countIo = new IntersectionObserver((entries) => {
       entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        countIo.unobserve(e.target);
+        if (!e.isIntersecting) { countRunning = false; statCounter.textContent = '0'; return; }
+        if (countRunning) return;
+        countRunning = true;
         if (reduceMotion) { statCounter.textContent = target; return; }
         const duration = 900;
         const start = performance.now();
         const tick = (now) => {
+          if (!countRunning) return;
           const p = Math.min(1, (now - start) / duration);
           statCounter.textContent = Math.round(p * target);
           if (p < 1) requestAnimationFrame(tick);
@@ -853,23 +862,21 @@
     }
   }
 
-  /* ============ PLUIE DE CODE (canvas) ============ */
+  /* ============ PLUIE DE CODE (canvas) — version sobre et propre ============ */
   if (!reduceMotion) {
     class CodeRain {
       constructor(canvas, opts) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.opts = Object.assign({
-          fontSize: 14,
-          colors: ['#4338ca', '#ff4d1c', '#0d9488', '#2563eb'],
-          fadeColor: 'rgba(251,250,248,0.07)',
-          charAlpha: 0.55,
-          speedMin: 0.6,
-          speedMax: 1.8
+          fontSize: 13,
+          colors: ['#4338ca', '#0d9488'],
+          charAlpha: 0.4,
+          speedMin: 0.5,
+          speedMax: 1.3,
+          columnGap: 34
         }, opts);
-        this.tokens = ['{ }', '</>', '=>', 'const', 'npm i', 'SELECT', '01', '10',
-          'fetch()', 'async', 'API', 'JSON', 'git', '&&', '||', '===', 'fn()',
-          'node', 'SQL', '[ ]', '#!/', 'POST', 'GET', 'try{}', 'null'];
+        this.glyphs = '01{}()<>/;=+-*#'.split('');
         this.running = false;
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -880,38 +887,39 @@
         this.canvas.width = rect.width * dpr;
         this.canvas.height = rect.height * dpr;
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.ctx.clearRect(0, 0, rect.width, rect.height);
         this.w = rect.width;
         this.h = rect.height;
-        const colCount = Math.max(6, Math.floor(this.w / 90));
+        const colCount = Math.max(6, Math.floor(this.w / this.opts.columnGap));
         const colWidth = this.w / colCount;
         this.drops = Array.from({ length: colCount }, (_, i) => ({
           x: i * colWidth + colWidth / 2,
           y: Math.random() * -this.h,
           speed: this.opts.speedMin + Math.random() * (this.opts.speedMax - this.opts.speedMin),
-          color: this.opts.colors[i % this.opts.colors.length],
-          token: this.tokens[Math.floor(Math.random() * this.tokens.length)],
-          switchAt: Math.random() * 200
+          color: this.opts.colors[Math.floor(Math.random() * this.opts.colors.length)],
+          glyph: this.glyphs[Math.floor(Math.random() * this.glyphs.length)],
+          switchAt: Math.random() * 20
         }));
       }
       step() {
         const ctx = this.ctx;
-        ctx.fillStyle = this.opts.fadeColor;
-        ctx.fillRect(0, 0, this.w, this.h);
+        ctx.clearRect(0, 0, this.w, this.h);
         ctx.font = `600 ${this.opts.fontSize}px 'JetBrains Mono', monospace`;
         ctx.textAlign = 'center';
         this.drops.forEach(d => {
           ctx.globalAlpha = this.opts.charAlpha;
           ctx.fillStyle = d.color;
-          ctx.fillText(d.token, d.x, d.y);
+          ctx.fillText(d.glyph, d.x, d.y);
           d.y += d.speed;
           d.switchAt -= 1;
           if (d.switchAt <= 0) {
-            d.token = this.tokens[Math.floor(Math.random() * this.tokens.length)];
-            d.switchAt = 120 + Math.random() * 200;
+            d.glyph = this.glyphs[Math.floor(Math.random() * this.glyphs.length)];
+            d.switchAt = 14 + Math.random() * 20;
           }
-          if (d.y > this.h + 20) {
-            d.y = -20 - Math.random() * 100;
+          if (d.y > this.h + 16) {
+            d.y = -16 - Math.random() * 140;
             d.speed = this.opts.speedMin + Math.random() * (this.opts.speedMax - this.opts.speedMin);
+            d.color = this.opts.colors[Math.floor(Math.random() * this.opts.colors.length)];
           }
         });
         ctx.globalAlpha = 1;
@@ -936,17 +944,15 @@
     const heroCanvas = document.getElementById('codeRainHero');
     if (heroCanvas) {
       rains.push(new CodeRain(heroCanvas, {
-        colors: ['#4338ca', '#ff4d1c', '#0d9488', '#2563eb', '#d97706'],
-        fadeColor: 'rgba(251,250,248,0.07)',
-        charAlpha: 0.5
+        colors: ['#4338ca', '#0d9488', '#94a0b8'],
+        charAlpha: 0.35
       }));
     }
     const contactCanvas = document.getElementById('codeRainContact');
     if (contactCanvas) {
       rains.push(new CodeRain(contactCanvas, {
-        colors: ['#ff8a65', '#7c6ef0', '#5eead4', '#93c5fd'],
-        fadeColor: 'rgba(15,16,22,0.10)',
-        charAlpha: 0.7
+        colors: ['#7c6ef0', '#5eead4'],
+        charAlpha: 0.45
       }));
     }
 
