@@ -261,8 +261,70 @@
     html{scroll-behavior:auto;}
   }
 
+  /* SCROLL PROGRESS */
+  .scroll-progress{
+    position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--teal));
+    z-index:100;width:0%;transition:width .1s linear;
+  }
+
+  /* CUSTOM CURSOR GLOW */
+  .cursor-glow{
+    position:fixed;width:420px;height:420px;border-radius:50%;pointer-events:none;z-index:2;
+    background:radial-gradient(circle, rgba(232,163,61,0.06), transparent 70%);
+    transform:translate(-50%,-50%);
+    left:0;top:0;opacity:0;transition:opacity .3s;
+  }
+
+  /* NETWORK CANVAS */
+  #network-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0.85;}
+  .hero{overflow:hidden;}
+
+  /* TYPEWRITER */
+  .typewriter-line{
+    font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--teal);
+    margin-bottom:18px;display:flex;align-items:center;gap:2px;min-height:22px;
+  }
+  .typewriter-line .caret{
+    display:inline-block;width:2px;height:16px;background:var(--teal);
+    animation:blink 1s step-end infinite;margin-left:2px;
+  }
+  @keyframes blink{50%{opacity:0;}}
+
+  /* TIMELINE (formation) */
+  .timeline{position:relative;padding-left:8px;}
+  .tline{
+    position:absolute;left:104px;top:6px;bottom:6px;width:1px;
+    background:var(--line-strong);
+  }
+  .tstep{
+    display:grid;grid-template-columns:88px 24px 1fr;align-items:start;gap:0;
+    margin-bottom:28px;position:relative;
+  }
+  .tyear{font-size:12px;color:var(--muted-dim);padding-top:14px;}
+  .tdot{
+    width:11px;height:11px;border-radius:50%;background:var(--surface);
+    border:2px solid var(--muted-dim);margin-top:15px;justify-self:center;z-index:2;
+  }
+  .tdot.dot-active{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 4px rgba(232,163,61,0.18);}
+  .tcard{
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:16px 20px;margin-left:16px;
+  }
+  .tcard-active{border-color:rgba(232,163,61,0.35);}
+  .tcard-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15.5px;margin-bottom:3px;}
+  .tcard-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+
+  @media (max-width:860px){
+    .tline{left:8px;}
+    .tstep{grid-template-columns:16px 1fr;gap:8px;}
+    .tyear{grid-column:1 / -1;padding-top:0;margin-bottom:6px;}
+    .tdot{margin-top:5px;justify-self:start;}
+    .tcard{margin-left:8px;}
+  }
+
   /* focus visibility */
   a:focus-visible, .btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
 
   /* MOBILE */
   @media (max-width:860px){
@@ -286,12 +348,15 @@
 <body>
 
 <div class="grid-bg"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="cursor-glow" id="cursorGlow"></div>
 
 <header>
   <nav>
     <div class="logo">JN<span class="dot">.</span>DEV</div>
     <div class="nav-links">
       <a href="#projets">Projets</a>
+      <a href="#formation">Formation</a>
       <a href="#stack">Stack</a>
       <a href="#contact">Contact</a>
     </div>
@@ -302,9 +367,11 @@
 <main>
   <!-- HERO -->
   <section class="hero">
+    <canvas id="network-canvas"></canvas>
     <div class="wrap hero-grid">
       <div class="reveal in">
         <div class="eyebrow">DÉVELOPPEUR FULLSTACK · ABIDJAN, CÔTE D'IVOIRE</div>
+        <div class="typewriter-line"><span id="typewriter"></span><span class="caret"></span></div>
         <h1>Je construis des plateformes<br>qui tournent <em>en production</em>.</h1>
         <p class="lead">
           Fondateur d'ImmoCi. Développeur backend/fullstack pour des plateformes de santé,
@@ -316,9 +383,9 @@
           <a href="assets/CV_Jonathan_Nguettia.pdf" download class="btn btn-ghost">↓ Télécharger le CV</a>
         </div>
         <div class="hero-stats">
-          <div class="hstat"><div class="num">4</div><div class="lbl">PLATEFORMES EN PROD</div></div>
-          <div class="hstat"><div class="num">10+</div><div class="lbl">TABLES / MODÈLES CONÇUS</div></div>
-          <div class="hstat"><div class="num">1</div><div class="lbl">FONDATEUR — IMMOCI</div></div>
+          <div class="hstat"><div class="num" data-count="4">0</div><div class="lbl">PLATEFORMES EN PROD</div></div>
+          <div class="hstat"><div class="num" data-count="10" data-suffix="+">0</div><div class="lbl">TABLES / MODÈLES CONÇUS</div></div>
+          <div class="hstat"><div class="num" data-count="1">0</div><div class="lbl">FONDATEUR — IMMOCI</div></div>
         </div>
       </div>
       <div class="portrait-wrap reveal in">
@@ -409,7 +476,65 @@
     </div>
   </section>
 
-  <!-- PROJECTS -->
+  <!-- FORMATION -->
+  <section id="formation">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="sec-eyebrow">// FORMATION & CERTIFICATIONS</span>
+        <h2>Une montée en compétence continue</h2>
+        <p>Du réseau à la sécurité, puis du développement — chaque étape a nourri la suivante.</p>
+      </div>
+      <div class="timeline">
+        <div class="tline"></div>
+
+        <div class="tstep reveal">
+          <div class="tyear mono">2019 — 2021</div>
+          <div class="tdot"></div>
+          <div class="tcard">
+            <div class="tcard-title">BTS Réseau Informatique et Télécommunication</div>
+            <div class="tcard-sub">Institut Universitaire Polytechnique d'Abidjan (IUPA)</div>
+          </div>
+        </div>
+
+        <div class="tstep reveal">
+          <div class="tyear mono">2021 — 2023</div>
+          <div class="tdot"></div>
+          <div class="tcard">
+            <div class="tcard-title">Licence 2, Réseau et Sécurité Informatique</div>
+            <div class="tcard-sub">Université Virtuelle de Côte d'Ivoire</div>
+          </div>
+        </div>
+
+        <div class="tstep reveal">
+          <div class="tyear mono">2026</div>
+          <div class="tdot"></div>
+          <div class="tcard">
+            <div class="tcard-title">Apply AI: Analyze Customer Reviews</div>
+            <div class="tcard-sub">Cisco Networking Academy</div>
+          </div>
+        </div>
+
+        <div class="tstep reveal">
+          <div class="tyear mono">EN COURS</div>
+          <div class="tdot dot-active"></div>
+          <div class="tcard tcard-active">
+            <div class="tcard-title">CompTIA Security+</div>
+            <div class="tcard-sub">GOMYCODE</div>
+          </div>
+        </div>
+
+        <div class="tstep reveal">
+          <div class="tyear mono">EN COURS</div>
+          <div class="tdot dot-active"></div>
+          <div class="tcard tcard-active">
+            <div class="tcard-title">Certification Développeur Fullstack</div>
+            <div class="tcard-sub">Perfectionnement Node.js / React / architecture logicielle</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="projets">
     <div class="wrap">
       <div class="sec-head reveal">
@@ -562,6 +687,7 @@
 </footer>
 
 <script>
+  /* ---------- REVEAL ON SCROLL ---------- */
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => {
@@ -569,6 +695,174 @@
     });
   }, { threshold: 0.15 });
   revealEls.forEach(el => io.observe(el));
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- SCROLL PROGRESS BAR ---------- */
+  const scrollProgress = document.getElementById('scrollProgress');
+  function updateScrollProgress(){
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    scrollProgress.style.width = scrolled + '%';
+  }
+  document.addEventListener('scroll', updateScrollProgress, { passive:true });
+  updateScrollProgress();
+
+  /* ---------- CURSOR GLOW ---------- */
+  const glow = document.getElementById('cursorGlow');
+  if (!reduceMotion && window.matchMedia('(hover:hover)').matches) {
+    window.addEventListener('mousemove', (e) => {
+      glow.style.left = e.clientX + 'px';
+      glow.style.top = e.clientY + 'px';
+      glow.style.opacity = '1';
+    });
+    window.addEventListener('mouseleave', () => glow.style.opacity = '0');
+  }
+
+  /* ---------- TYPEWRITER ---------- */
+  const roles = [
+    'fondateur d\u2019ImmoCi',
+    'développeur backend Node.js',
+    'architecte de bases de données',
+    'intégrateur de paiement mobile',
+  ];
+  const twEl = document.getElementById('typewriter');
+  if (twEl) {
+    if (reduceMotion) {
+      twEl.textContent = roles[0];
+    } else {
+      let roleIdx = 0, charIdx = 0, deleting = false;
+      function typeTick(){
+        const current = roles[roleIdx];
+        if (!deleting) {
+          charIdx++;
+          twEl.textContent = current.slice(0, charIdx);
+          if (charIdx === current.length) { deleting = true; setTimeout(typeTick, 1400); return; }
+          setTimeout(typeTick, 55);
+        } else {
+          charIdx--;
+          twEl.textContent = current.slice(0, charIdx);
+          if (charIdx === 0) { deleting = false; roleIdx = (roleIdx + 1) % roles.length; setTimeout(typeTick, 300); return; }
+          setTimeout(typeTick, 28);
+        }
+      }
+      typeTick();
+    }
+  }
+
+  /* ---------- ANIMATED COUNTERS ---------- */
+  const counters = document.querySelectorAll('[data-count]');
+  const counterIO = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseInt(el.dataset.count, 10);
+      const suffix = el.dataset.suffix || '';
+      if (reduceMotion) { el.textContent = target + suffix; counterIO.unobserve(el); return; }
+      let start = 0;
+      const duration = 900;
+      const startTime = performance.now();
+      function tick(now){
+        const p = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(eased * target) + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      counterIO.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(c => counterIO.observe(c));
+
+  /* ---------- PROJECT CARD TILT ---------- */
+  if (!reduceMotion && window.matchMedia('(hover:hover)').matches) {
+    document.querySelectorAll('.project-card').forEach(card => {
+      card.style.transformStyle = 'preserve-3d';
+      card.style.willChange = 'transform';
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top) / r.height - 0.5;
+        card.style.transform = `perspective(900px) rotateX(${(-y*2.2).toFixed(2)}deg) rotateY(${(x*2.2).toFixed(2)}deg) translateY(-2px)`;
+      });
+      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    });
+  }
+
+  /* ---------- NETWORK CANVAS (hero background) ---------- */
+  (function(){
+    const canvas = document.getElementById('network-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const hero = canvas.closest('.hero');
+    let w, h, nodes, mouse = { x: -9999, y: -9999 };
+
+    function resize(){
+      w = canvas.width = hero.offsetWidth;
+      h = canvas.height = hero.offsetHeight;
+    }
+    function initNodes(){
+      const count = Math.min(46, Math.floor((w*h) / 26000));
+      nodes = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: (Math.random() - 0.5) * 0.28,
+      }));
+    }
+    resize();
+    initNodes();
+    window.addEventListener('resize', () => { resize(); initNodes(); });
+    hero.addEventListener('mousemove', (e) => {
+      const r = hero.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+    });
+    hero.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+    const LINK_DIST = 150;
+    const MOUSE_DIST = 180;
+
+    function frame(){
+      ctx.clearRect(0, 0, w, h);
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > w) n.vx *= -1;
+        if (n.y < 0 || n.y > h) n.vy *= -1;
+      }
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < LINK_DIST) {
+            ctx.strokeStyle = `rgba(232,163,61,${0.12 * (1 - d / LINK_DIST)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+        const dm = Math.hypot(n.x - mouse.x, n.y - mouse.y);
+        if (dm < MOUSE_DIST) {
+          ctx.strokeStyle = `rgba(79,209,197,${0.35 * (1 - dm / MOUSE_DIST)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.stroke();
+        }
+      }
+      for (const n of nodes) {
+        ctx.fillStyle = 'rgba(232,163,61,0.55)';
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    if (!reduceMotion) requestAnimationFrame(frame);
+  })();
 </script>
 
 </body>
